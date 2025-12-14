@@ -41,7 +41,7 @@ const createEvent = async (req, res) => {
       description,
       date,
       location,
-      image: req.file?.path || "",
+      imageURL: req.file?.path || "",
       createdBy: req.user._id,
     });
 
@@ -75,9 +75,9 @@ const updateEvent = async (req, res) => {
     if (description) event.description = description;
     if (date) event.date = date;
     if (location) event.location = location;
-    if (req.file) event.image = req.file.path;
+    if (req.file) event.imageURL = req.file.path;
 
-    const updateEvent = await event.save();
+    const updatedEvent = await event.save();
     return res.status(200).json(updatedEvent);
   } catch (error) {
     return res.status(500).json("Error al actualizar el evento");
@@ -97,7 +97,7 @@ const attendEvent = async (req, res) => {
     }
 
     // Evitar duplicado
-    if (event.attendess.includes(userId)) {
+    if (event.attendees.includes(userId)) {
       return res.status(400).json("Ya estás apuntado a este evento");
     }
 

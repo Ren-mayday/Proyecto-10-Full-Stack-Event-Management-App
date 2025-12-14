@@ -6,7 +6,7 @@ const eventSchema = new mongoose.Schema(
     date: { type: Date, required: true },
     location: { type: String, required: true },
     description: { type: String, default: "" },
-    imageURL: { type: String, default: "" },
+    imageURL: { type: String, required: false, trim: true, default: "" },
     attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },

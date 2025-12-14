@@ -4,9 +4,9 @@ const bcrypt = require("bcrypt");
 const userSchema = new mongoose.Schema(
   {
     userName: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
-    avatarURL: { type: String, default: "" },
+    avatarURL: { type: String, required: false, trim: true, default: "" },
     role: { type: String, enum: ["user", "admin"], default: "user" },
   },
   {
@@ -21,7 +21,7 @@ userSchema.pre("save", function (next) {
   next();
 });
 
-usesrSchema.methods.comparePassword = function (password) {
+userSchema.methods.comparePassword = function (password) {
   return bcrypt.compareSync(password, this.password);
 };
 

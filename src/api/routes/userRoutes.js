@@ -1,5 +1,6 @@
 const { isAuth } = require("../../middlewares/isAuth");
 const { registerUser, loginUser, updateUser, getUserProfile, deleteUser } = require("../controllers/userControllers");
+const upload = require("../../middlewares/file");
 
 const userRoutes = require("express").Router();
 
@@ -13,7 +14,7 @@ userRoutes.post("/login", loginUser);
 userRoutes.get("/:userName", [isAuth], getUserProfile);
 
 // Update user (admin o dueño → controlado en el controller)
-userRoutes.put("/:id", [isAuth], updateUser);
+userRoutes.put("/:id", [isAuth, upload.single("avatar")], updateUser);
 
 // Delete user (admin o dueño → controlado en el controller)
 userRoutes.delete("/:id", [isAuth], deleteUser);

@@ -146,6 +146,11 @@ const updateUser = async (req, res) => {
       user.password = newPassword; // mongoose la hashea por el pre-save
     }
 
+    // -- Avatar --
+    if (req.file) {
+      user.avatarURL = req.file.path;
+    }
+
     // 5. Guardar cambios
     const updated = await user.save();
 
