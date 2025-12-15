@@ -2,10 +2,14 @@ const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const { generateSign } = require("../../config/jwt.js");
 
-//POST /user registrar user normal
+//POST /register registrar user normal
 const registerUser = async (req, res) => {
+  console.log("🟡 Controlador registerUser ejecutado");
+  console.log("📦 req.body:", req.body);
+
   try {
     const { userName, email, password } = req.body;
+    console.log("1️⃣ Datos extraídos");
 
     // 1. Validar datos obligatorios
     if (!userName || !email || !password) {
@@ -15,30 +19,29 @@ const registerUser = async (req, res) => {
     // 2. Validar formato email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res
-        .status(400)
-        .json({ message: "Este email no es válido, por favor registra un email con el formato correcto" });
+      return res.status(400).json({ message: "Este email no es válido" });
     }
 
     // 3. Comprobar si user name está duplicado
-    if (await User.findOne({ userName })) {
-      return res.status(409).json("Este usuario ya existe. Por favor, indica otro nombre de usuario");
+    const existingUser = await User.findOne({ userName });
+    if (existingUser) {
+      return res.status(409).json("Este usuario ya existe");
     }
 
     // 4. Comprobar si email está duplicado
-    if (await User.findOne({ email })) {
-      return res.status(409).json("Este email ya existe. Por favor, registra otro email");
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(409).json("Este email ya existe");
     }
 
     // 5. Crear nuevo usuario
     const newUser = new User({ userName, email, password });
     const userSaved = await newUser.save();
-
     userSaved.password = undefined;
 
     return res.status(201).json({ message: "Usuario registrado correctamente", user: userSaved });
   } catch (error) {
-    res.status(500).json({ message: "Error al registrar usuario, prueba más tarde", error: error.message });
+    res.status(500).json({ message: "Error al registrar usuario", error: error.message });
   }
 };
 

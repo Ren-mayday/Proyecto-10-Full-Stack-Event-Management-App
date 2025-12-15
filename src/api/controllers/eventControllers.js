@@ -30,16 +30,33 @@ const getEventById = async (req, res) => {
 // POST /events -> privado - cualquier user
 const createEvent = async (req, res) => {
   try {
-    const { title, description, date, location } = req.body;
+    const { title, description, date, time, location } = req.body;
 
-    if (!title || !date || !location) {
-      return res.status(400).json("Faltan campos obligatorios");
+    // Validar campos obligatorios
+    if (!title || !date || !time || !location) {
+      return res.status(400).json({ error: "Faltan campos obligatorios (título, fecha, hora y ubicación)" });
+    }
+
+    // Detectar si la fecha está en horario de verano (CEST) o invierno (CET)
+    const testDate = new Date(date);
+    const offset = testDate.getTimezoneOffset() === -60 ? "+01:00" : "+02:00";
+    const dateTimeString = `${date}T${time}:00${offset}`;
+
+    const parsedDate = new Date(dateTimeString);
+
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: "Formato de fecha u hora inválido" });
+    }
+
+    // Validar que la fecha sea futura
+    if (parsedDate < new Date()) {
+      return res.status(400).json({ error: "La fecha y hora deben ser futuras" });
     }
 
     const newEvent = new Event({
       title,
       description,
-      date,
+      date: parsedDate,
       location,
       imageURL: req.file?.path || "",
       createdBy: req.user._id,
@@ -48,7 +65,8 @@ const createEvent = async (req, res) => {
     const savedEvent = await newEvent.save();
     return res.status(201).json(savedEvent);
   } catch (error) {
-    return res.status(500).json("Error al crear el evento");
+    console.error(error);
+    return res.status(500).json({ error: "Error al crear el evento" });
   }
 };
 
@@ -84,29 +102,57 @@ const updateEvent = async (req, res) => {
   }
 };
 
-//POST /event/:id/attend -> privado
-// Inserción usuario -> evento
+//POST /events/:id/attend -> privado
+// Usuario se apunta al evento
 const attendEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
-    const event = await Event.findById(id);
+    // $addToSet añade solo si no existe (evita duplicados automáticamente)
+    const event = await Event.findByIdAndUpdate(id, { $addToSet: { attendees: userId } }, { new: true }).populate(
+      "attendees",
+      "userName email avatarURL"
+    ); // Corregido: userName
+
     if (!event) {
-      return res.status(404).json("Evento no encontrado");
+      return res.status(404).json({ error: "Evento no encontrado" });
     }
 
-    // Evitar duplicado
-    if (event.attendees.includes(userId)) {
-      return res.status(400).json("Ya estás apuntado a este evento");
-    }
-
-    event.attendees.push(userId);
-    await event.save();
-
-    return res.status(200).json("Asistencia confirmada");
+    return res.status(200).json({
+      message: "Asistencia confirmada",
+      event,
+    });
   } catch (error) {
-    return res.status(500).json("Error al apuntarse al evento");
+    console.error(error);
+    return res.status(500).json({ error: "Error al apuntarse al evento" });
+  }
+};
+
+//DELETE /events/:id/attend -> privado
+// Usuario se desapunta del evento
+const unattendEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    const event = await Event.findByIdAndUpdate(
+      id,
+      { $pull: { attendees: userId } }, // $pull elimina del array
+      { new: true }
+    ).populate("attendees", "userName email avatarURL");
+
+    if (!event) {
+      return res.status(404).json({ error: "Evento no encontrado" });
+    }
+
+    return res.status(200).json({
+      message: "Te has desapuntado del evento",
+      event,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Error al desapuntarse del evento" });
   }
 };
 
@@ -141,5 +187,6 @@ module.exports = {
   createEvent,
   updateEvent,
   attendEvent,
+  unattendEvent,
   deleteEvent,
 };

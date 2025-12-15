@@ -6,6 +6,7 @@ const {
   createEvent,
   updateEvent,
   attendEvent,
+  unattendEvent,
   deleteEvent,
 } = require("../controllers/eventControllers");
 const upload = require("../../middlewares/file");
@@ -18,6 +19,7 @@ eventRoutes.get("/:id", getEventById);
 // Privado (cualquier usuario autenticado)
 eventRoutes.post("/", [isAuth, upload.single("image")], createEvent);
 eventRoutes.post("/:id/attend", [isAuth], attendEvent);
+eventRoutes.delete("/:id/attend", [isAuth], unattendEvent);
 
 eventRoutes.put("/:id", [isAuth, upload.single("image")], updateEvent);
 eventRoutes.delete("/:id", [isAuth], deleteEvent);
